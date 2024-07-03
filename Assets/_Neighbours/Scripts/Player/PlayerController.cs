@@ -8,9 +8,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private LayerMask doorLayer;
+    [SerializeField] private LayerMask interactableLayer;
+
+    private PlayerStateMachine _stateMachine;
+
+    private void Start()
+    {
+        _stateMachine = GetComponent<PlayerStateMachine>();
+        _stateMachine.ChangeState(new IdleState(_stateMachine));
+    }
 
     private void Update()
     {
+        _stateMachine.Update();
+
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -18,17 +29,23 @@ public class PlayerController : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, 100, groundLayer))
             {
-                Vector3 destination = hit.point;
-                NavMeshPath path = new NavMeshPath();
-                agent.CalculatePath(destination, path);
+                _stateMachine.ChangeState(new MoveState(_stateMachine, hit.point));
+            }
 
-                if (path.status == NavMeshPathStatus.PathComplete)
+            if (Physics.Raycast(ray, out hit, 100, interactableLayer))
+            {
+                IInteractable interactable = hit.collider.GetComponent<IInteractable>();
+                if (interactable != null)
                 {
-                    agent.SetDestination(destination);
-                }
-                else
-                {
-                    FindAndUseDoor(destination);
+                    float distance = Vector3.Distance(transform.position, hit.point);
+                    if (distance < 1.0f) // Если достаточно близко
+                    {
+                        _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
+                    }
+                    else // Если далеко, то сначала подойти
+                    {
+                        _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable));
+                    }
                 }
             }
         }
