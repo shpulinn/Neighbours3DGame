@@ -1,5 +1,6 @@
 using System.Collections;
 using _Neighbours.Scripts;
+using _Neighbours.Scripts.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -10,10 +11,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask interactableLayer;
 
     private PlayerStateMachine _stateMachine;
-
+    private Inventory _inventory;
+    
     private void Start()
     {
         _stateMachine = GetComponent<PlayerStateMachine>();
+        _inventory = GetComponent<Inventory>();
         _stateMachine.ChangeState(new IdleState(_stateMachine));
     }
 
@@ -39,7 +42,15 @@ public class PlayerController : MonoBehaviour
                     float distance = Vector3.Distance(transform.position, hit.point);
                     if (distance < 2.0f) // Если достаточно близко
                     {
-                        _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
+                        if (interactable is IInventoryInteractable)
+                        {
+                            _stateMachine.ChangeState(new InventoryInteractState(_stateMachine, (IInventoryInteractable)interactable, _inventory));
+                        }
+                        else
+                        {
+                            _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
+                        }
+                        //_stateMachine.ChangeState(new InteractState(_stateMachine, interactable, _inventory));
                     }
                     else // Если далеко, то сначала подойти
                     {

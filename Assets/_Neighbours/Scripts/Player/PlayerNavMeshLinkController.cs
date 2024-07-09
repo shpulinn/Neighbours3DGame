@@ -31,7 +31,7 @@ namespace _Neighbours.Scripts.Player
 
             //animator.SetTrigger("Jump");
 
-            float jumpDuration = .2f;
+            float jumpDuration = .7f;
             float jumpSpeed = .5f;
 
             float time = 0.0f;
@@ -47,6 +47,7 @@ namespace _Neighbours.Scripts.Player
 
             renderer.enabled = true;
 
+            //agent.path.ClearCorners();
             agent.CompleteOffMeshLink();
         }
     }
