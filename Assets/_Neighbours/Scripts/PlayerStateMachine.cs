@@ -1,4 +1,5 @@
 ﻿using System;
+using _Neighbours.Scripts.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -15,7 +16,7 @@ namespace _Neighbours.Scripts
     {
         [SerializeField] private bool logCurrentState = false;
         
-        private State currentState;
+        private State _currentState;
 
         private NavMeshAgent _agent;
 
@@ -28,34 +29,34 @@ namespace _Neighbours.Scripts
 
         public void ChangeState(State newState)
         {
-            if (currentState != null)
+            if (_currentState != null)
             {
-                currentState.Exit();
+                _currentState.Exit();
             }
-            currentState = newState;
-            currentState.Enter();
+            _currentState = newState;
+            _currentState.Enter();
         }
 
         public void Update()
         {
-            if (currentState != null)
+            if (_currentState != null)
             {
                 if (logCurrentState)
                 {
-                    Debug.Log(currentState);
+                    Debug.Log(_currentState);
                 }
-                currentState.Execute();
+                _currentState.Execute();
             }
         }
     }
 
     public class IdleState : State
     {
-        private PlayerStateMachine player;
+        private PlayerStateMachine _player;
 
         public IdleState(PlayerStateMachine player)
         {
-            this.player = player;
+            _player = player;
         }
 
         public override void Enter() { }
@@ -68,25 +69,26 @@ namespace _Neighbours.Scripts
 
     public class MoveState : State
     {
-        private PlayerStateMachine player;
-        private Vector3 destination;
+        private PlayerStateMachine _player;
+        private Vector3 _destination;
 
         public MoveState(PlayerStateMachine player, Vector3 destination)
         {
-            this.player = player;
-            this.destination = destination;
+            _player = player;
+            _destination = destination;
         }
 
         public override void Enter()
         {
-            player.Agent.SetDestination(destination);
+            _player.Agent.SetDestination(_destination);
         }
         public override void Execute()
         {
-            Vector3 playerPosWithoutY = new Vector3(player.transform.position.x, 0, player.transform.position.z);
-            if (Vector3.Distance(playerPosWithoutY, destination) < 0.6f)
+            var playerTransformPos = _player.transform.position;
+            var playerPosWithoutY = new Vector3(playerTransformPos.x, 0, playerTransformPos.z);
+            if (Vector3.Distance(playerPosWithoutY, _destination) < 0.6f)
             {
-                player.ChangeState(new IdleState(player));
+                _player.ChangeState(new IdleState(_player));
             }
         }
         public override void Exit() { }
@@ -94,27 +96,38 @@ namespace _Neighbours.Scripts
     
     public class ApproachState : State
     {
-        private PlayerStateMachine player;
-        private Vector3 targetPosition;
-        private IInteractable interactable;
+        private PlayerStateMachine _player;
+        private Vector3 _targetPosition;
+        private IInteractable _interactable;
+        private IInventoryInteractable _inventoryInteractable;
+        private Inventory _inventory;
 
-        public ApproachState(PlayerStateMachine player, Vector3 targetPosition, IInteractable interactable)
+        public ApproachState(PlayerStateMachine player, Vector3 targetPosition, IInteractable interactable, Inventory inventory)
         {
-            this.player = player;
-            this.targetPosition = targetPosition;
-            this.interactable = interactable;
+            _player = player;
+            _targetPosition = targetPosition;
+            _interactable = interactable;
+            _inventoryInteractable = interactable as IInventoryInteractable;
+            _inventory = inventory;
         }
 
         public override void Enter()
         {
-            player.Agent.SetDestination(targetPosition);
+            _player.Agent.SetDestination(_targetPosition);
         }
 
         public override void Execute()
         {
-            if (Vector3.Distance(player.transform.position, targetPosition) < 1.0f)
+            if (Vector3.Distance(_player.transform.position, _targetPosition) < 1.0f)
             {
-                player.ChangeState(new InteractState(player, interactable));
+                if (_inventoryInteractable != null)
+                {
+                    _player.ChangeState(new InventoryInteractState(_player, _inventoryInteractable, _inventory));
+                }
+                else
+                {
+                    _player.ChangeState(new InteractState(_player, _interactable));
+                }
             }
         }
 
@@ -123,41 +136,75 @@ namespace _Neighbours.Scripts
 
     public class InteractState : State
     {
-        private PlayerStateMachine player;
-        private IInteractable interactable;
+        private PlayerStateMachine _player;
+        private IInteractable _interactable;
         
-        private float interactionTime;
-        private float elapsedTime;
+        private float _interactionTime;
+        private float _elapsedTime;
 
         public InteractState(PlayerStateMachine player, IInteractable interactable)
         {
-            this.player = player;
-            this.interactable = interactable;
-            this.interactionTime = interactable.InteractionDuration;
+            _player = player;
+            _interactable = interactable;
+            _interactionTime = interactable.InteractionDuration;
         }
 
         public override void Enter()
         {
-            interactable.Interact();
-            elapsedTime = 0f;
+            _interactable.Interact();
+            _elapsedTime = 0f;
         }
 
         public override void Execute()
         {
-            elapsedTime += Time.deltaTime;
-            if (elapsedTime >= interactionTime)
+            _elapsedTime += Time.deltaTime;
+            if (_elapsedTime >= _interactionTime)
             {
-                player.ChangeState(new IdleState(player));
+                _player.ChangeState(new IdleState(_player));
             }
         }
 
         public override void Exit()
         {
-            if (elapsedTime < interactionTime)
+            if (_elapsedTime < _interactionTime)
             {
-                interactable.TerminateInteraction();
+                _interactable.TerminateInteraction();
             }
         }
     }
 
+    public class InventoryInteractState : State
+    {
+        private PlayerStateMachine _player;
+        private IInventoryInteractable _interactable;
+        private Inventory _inventory;
+
+        private float _interactionTime;
+        private float _elapsedTime;
+
+        public InventoryInteractState(PlayerStateMachine player, IInventoryInteractable interactable, Inventory inventory)
+        {
+            _player = player;
+            _interactable = interactable;
+            _inventory = inventory;
+            _interactionTime = interactable.InteractionDuration;
+        }
+
+        public override void Enter()
+        {
+            _interactable.InteractWithAnItem(_inventory);
+            _elapsedTime = 0f;
+        }
+
+        public override void Execute()
+        {
+            _elapsedTime += Time.deltaTime;
+            if (_elapsedTime >= _interactionTime)
+            {
+                _player.ChangeState(new IdleState(_player));
+            }
+        }
+
+        public override void Exit() { }
+    }
 }

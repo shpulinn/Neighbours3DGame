@@ -54,7 +54,7 @@ public class PlayerController : MonoBehaviour
                     }
                     else // Если далеко, то сначала подойти
                     {
-                        _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable));
+                        _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable, _inventory));
                     }
                 }
             }

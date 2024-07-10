@@ -1,3 +1,5 @@
+using _Neighbours.Scripts;
+
 public interface IInteractable
 {
     public void Interact();
