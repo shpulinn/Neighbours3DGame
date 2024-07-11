@@ -9,6 +9,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private LayerMask interactableLayer;
+    [SerializeField] private float playerNormalMoveSpeed;
+    [SerializeField] private float playerSlowMoveSpeed;
 
     private PlayerStateMachine _stateMachine;
     private Inventory _inventory;
@@ -26,16 +28,18 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
+            agent.speed = playerNormalMoveSpeed;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
-            Physics.Raycast(ray, out hit, 100);
             if (Physics.Raycast(ray, out hit, 100, groundLayer))
             {
+                Debug.Log("ground layer");
                 _stateMachine.ChangeState(new MoveState(_stateMachine, hit.point));
             } 
             else if (Physics.Raycast(ray, out hit, 100, interactableLayer))
             {
+                Debug.Log("Interactable layer");
                 IInteractable interactable = hit.collider.GetComponent<IInteractable>();
                 if (interactable != null)
                 {
@@ -58,6 +62,19 @@ public class PlayerController : MonoBehaviour
                     }
                 }
             }
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            agent.speed = playerSlowMoveSpeed;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            Physics.Raycast(ray, out hit, 100);
+            if (Physics.Raycast(ray, out hit, 100, groundLayer))
+            {
+                _stateMachine.ChangeState(new MoveState(_stateMachine, hit.point));
+            } 
         }
     }
 }
