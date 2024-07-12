@@ -19,6 +19,7 @@ public class Box : MonoBehaviour, IInteractable
         {
             Debug.Log("Тут больше ничего нет");
             TerminateInteraction();
+            return;
         }
         StartCoroutine(InteractionCoroutine());
     }
