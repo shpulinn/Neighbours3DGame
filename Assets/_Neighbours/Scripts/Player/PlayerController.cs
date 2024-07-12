@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private LayerMask interactableLayer;
+    [SerializeField] private float interactionDistance = 2f;
     [SerializeField] private float playerNormalMoveSpeed;
     [SerializeField] private float playerSlowMoveSpeed;
 
@@ -26,55 +27,37 @@ public class PlayerController : MonoBehaviour
     {
         _stateMachine.Update();
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
         {
-            agent.speed = playerNormalMoveSpeed;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            var isLeftClick = Input.GetMouseButtonDown(0);
+            agent.speed = isLeftClick ? playerNormalMoveSpeed : playerSlowMoveSpeed;
+            var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
-            if (Physics.Raycast(ray, out hit, 100, groundLayer))
+            if (Physics.Raycast(ray, out hit, 100, interactableLayer))
             {
-                Debug.Log("ground layer");
-                _stateMachine.ChangeState(new MoveState(_stateMachine, hit.point));
-            } 
-            else if (Physics.Raycast(ray, out hit, 100, interactableLayer))
-            {
-                Debug.Log("Interactable layer");
                 IInteractable interactable = hit.collider.GetComponent<IInteractable>();
-                if (interactable != null)
+                if (interactable == null) return;
+                float distance = Vector3.Distance(transform.position, hit.point);
+                if (distance < interactionDistance) // interact
                 {
-                    float distance = Vector3.Distance(transform.position, hit.point);
-                    if (distance < 2.0f) // Если достаточно близко
+                    if (interactable is IInventoryInteractable)
                     {
-                        if (interactable is IInventoryInteractable)
-                        {
-                            _stateMachine.ChangeState(new InventoryInteractState(_stateMachine, (IInventoryInteractable)interactable, _inventory));
-                        }
-                        else
-                        {
-                            _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
-                        }
-                        //_stateMachine.ChangeState(new InteractState(_stateMachine, interactable, _inventory));
+                        _stateMachine.ChangeState(new InventoryInteractState(_stateMachine, (IInventoryInteractable)interactable, _inventory));
                     }
-                    else // Если далеко, то сначала подойти
+                    else
                     {
-                        _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable, _inventory));
+                        _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
                     }
                 }
-            }
-        }
-
-        if (Input.GetMouseButtonDown(1))
-        {
-            agent.speed = playerSlowMoveSpeed;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            Physics.Raycast(ray, out hit, 100);
-            if (Physics.Raycast(ray, out hit, 100, groundLayer))
+                else // approach to interactable object before interacting
+                {
+                    _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable, _inventory));
+                }
+            } else if (Physics.Raycast(ray, out hit, 100, groundLayer))
             {
                 _stateMachine.ChangeState(new MoveState(_stateMachine, hit.point));
-            } 
+            }
         }
     }
 }
