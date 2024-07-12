@@ -1,31 +1,14 @@
-﻿using System;
-using _Neighbours.Scripts.Interactables;
+﻿using _Neighbours.Scripts.Interactables;
+using _Neighbours.Scripts.States;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace _Neighbours.Scripts
 {
-    public abstract class State
-    {
-        public abstract void Enter();
-        public abstract void Execute();
-        public abstract void Exit();
-    }
-
-    public class PlayerStateMachine : MonoBehaviour
+    public class PlayerStateMachine : StateMachine
     {
         [SerializeField] private bool logCurrentState = false;
         
         private State _currentState;
-
-        private NavMeshAgent _agent;
-
-        public NavMeshAgent Agent => _agent;
-
-        private void Start()
-        {
-            _agent = FindObjectOfType<PlayerController>().GetComponent<NavMeshAgent>();
-        }
 
         public void ChangeState(State newState)
         {
