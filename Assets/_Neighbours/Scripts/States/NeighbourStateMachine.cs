@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Threading.Tasks;
+using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace _Neighbours.Scripts.States
 {
@@ -133,6 +135,7 @@ namespace _Neighbours.Scripts.States
         private NeighbourStateMachine _neighbour;
         private ActivityRoute _activityRoute;
         private int _currentPointIndex;
+        private bool _isExecuting;
 
         public PatrolState(NeighbourStateMachine neighbour)
         {
@@ -143,19 +146,13 @@ namespace _Neighbours.Scripts.States
 
         public override void Enter()
         {
-            MoveToNextPoint();
+            _isExecuting = false;
+            MoveToNextPoint().Forget();
         }
-
-        public override void Execute()
+        
+        public override async void Execute()
         {
-            if (!_neighbour.Agent.pathPending && 
-                _neighbour.Agent.remainingDistance <= _neighbour.Agent.stoppingDistance)
-            {
-                // todo:
-                // wait for  _activityRoute.activities[_currentPointIndex].Duration
-                // ane then:
-                _neighbour.ChangeState(new IdleState(_neighbour));
-            }
+            // dk is it really need in here
         }
 
         public override void Exit()
@@ -163,14 +160,33 @@ namespace _Neighbours.Scripts.States
             _neighbour.CurrentPointIndex = _currentPointIndex;
         }
 
-        private void MoveToNextPoint()
+        private async UniTaskVoid MoveToNextPoint()
         {
             if (_activityRoute.activities.Count == 0)
                 return;
 
             _neighbour.Agent.SetDestination(_activityRoute.activities[_currentPointIndex].Position);
 
-            _currentPointIndex = (_currentPointIndex + 1) % _activityRoute.activities.Count;
+            while (_neighbour.Agent.pathPending || _neighbour.Agent.remainingDistance > _neighbour.Agent.stoppingDistance)
+            {
+                await UniTask.Yield();
+            }
+
+            if (!_isExecuting)
+            {
+                _isExecuting = true;
+                Debug.Log(_activityRoute.activities[_currentPointIndex]);
+                await PerformActivity(_activityRoute.activities[_currentPointIndex]);
+                _isExecuting = false;
+                _currentPointIndex = (_currentPointIndex + 1) % _activityRoute.activities.Count;
+                MoveToNextPoint().Forget();
+            }
+        }
+
+        private async UniTask PerformActivity(Activity activity)
+        {
+            // add animation/other logic?
+            await UniTask.Delay((int)(activity.Duration * 1000));
         }
     }
 

@@ -6,13 +6,12 @@ namespace _Neighbours.Scripts.States
     public abstract class StateMachine : MonoBehaviour
     {
         private State _currentState;
-        protected NavMeshAgent agent;
 
-        public NavMeshAgent Agent => agent;
+        public NavMeshAgent Agent { get; private set; }
 
         protected virtual void Start()
         {
-            agent = GetComponent<NavMeshAgent>();
+            Agent = GetComponent<NavMeshAgent>();
         }
 
         public void ChangeState(State newState)

@@ -8,6 +8,8 @@ public class Activity : MonoBehaviour
         animation to play?
         sound to play?
         connected objects to interact with?
+        information about corrupted state of activity? 
+        item to use to make interaction?
      */
 
     public Vector3 Position => transform.position;
