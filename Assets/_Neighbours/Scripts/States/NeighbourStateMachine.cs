@@ -162,12 +162,12 @@ namespace _Neighbours.Scripts.States
 
         private async UniTaskVoid MoveToNextPoint()
         {
-            if (_activityRoute.activities.Count == 0)
+            if (_activityRoute.activities.Count == 0 || IsAgentValid() == false)
                 return;
 
             _neighbour.Agent.SetDestination(_activityRoute.activities[_currentPointIndex].Position);
 
-            while (_neighbour.Agent.pathPending || _neighbour.Agent.remainingDistance > _neighbour.Agent.stoppingDistance)
+            while (IsAgentValid() && (_neighbour.Agent.pathPending || _neighbour.Agent.remainingDistance > _neighbour.Agent.stoppingDistance))
             {
                 await UniTask.Yield();
             }
@@ -175,7 +175,7 @@ namespace _Neighbours.Scripts.States
             if (!_isExecuting)
             {
                 _isExecuting = true;
-                Debug.Log(_activityRoute.activities[_currentPointIndex]);
+                //Debug.Log(_activityRoute.activities[_currentPointIndex]);
                 await PerformActivity(_activityRoute.activities[_currentPointIndex]);
                 _isExecuting = false;
                 _currentPointIndex = (_currentPointIndex + 1) % _activityRoute.activities.Count;
@@ -187,6 +187,11 @@ namespace _Neighbours.Scripts.States
         {
             // add animation/other logic?
             await UniTask.Delay((int)(activity.Duration * 1000));
+        }
+        
+        private bool IsAgentValid()
+        {
+            return _neighbour.Agent != null && _neighbour.Agent.isActiveAndEnabled && _neighbour.Agent.isOnNavMesh;
         }
     }
 

@@ -80,18 +80,22 @@ namespace _Neighbours.Scripts
     public class ApproachState : State
     {
         private PlayerStateMachine _player;
+        private PlayerController _playerController;
         private Vector3 _targetPosition;
         private IInteractable _interactable;
         private IInventoryInteractable _inventoryInteractable;
         private Inventory _inventory;
+        private IHidable _hidable;
 
-        public ApproachState(PlayerStateMachine player, Vector3 targetPosition, IInteractable interactable, Inventory inventory)
+        public ApproachState(PlayerStateMachine player, Vector3 targetPosition, IInteractable interactable, Inventory inventory = null, PlayerController playerController = null)
         {
             _player = player;
+            _playerController = playerController;
             _targetPosition = targetPosition;
             _interactable = interactable;
             _inventoryInteractable = interactable as IInventoryInteractable;
             _inventory = inventory;
+            _hidable = interactable as IHidable;
         }
 
         public override void Enter()
@@ -106,6 +110,10 @@ namespace _Neighbours.Scripts
                 if (_inventoryInteractable != null)
                 {
                     _player.ChangeState(new InventoryInteractState(_player, _inventoryInteractable, _inventory));
+                }
+                else if(_hidable != null)
+                {
+                    _player.ChangeState(new HideState(_player, _playerController));
                 }
                 else
                 {
@@ -189,5 +197,30 @@ namespace _Neighbours.Scripts
         }
 
         public override void Exit() { }
+    }
+    
+    public class HideState : State
+    {
+        private PlayerStateMachine _player;
+        private PlayerController _playerController;
+
+        public HideState(PlayerStateMachine player, PlayerController playerController)
+        {
+            _player = player;
+            _playerController = playerController;
+        }
+
+        public override void Enter()
+        {
+            _playerController.transform.GetChild(0).gameObject.SetActive(false);
+        }
+        public override void Execute()
+        { }
+
+        public override void Exit()
+        {
+            _playerController.transform.GetChild(0).gameObject.SetActive(true);
+
+        }
     }
 }
