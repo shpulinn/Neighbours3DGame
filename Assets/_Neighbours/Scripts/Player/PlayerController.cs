@@ -45,6 +45,10 @@ public class PlayerController : MonoBehaviour
                     {
                         _stateMachine.ChangeState(new InventoryInteractState(_stateMachine, (IInventoryInteractable)interactable, _inventory));
                     }
+                    else if (interactable is IHidable)
+                    {
+                        _stateMachine.ChangeState(new HideState(_stateMachine, this));
+                    }
                     else
                     {
                         _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
@@ -52,7 +56,7 @@ public class PlayerController : MonoBehaviour
                 }
                 else // approach to interactable object before interacting
                 {
-                    _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable, _inventory));
+                    _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable, _inventory, this));
                 }
             } else if (Physics.Raycast(ray, out hit, 100, groundLayer))
             {
