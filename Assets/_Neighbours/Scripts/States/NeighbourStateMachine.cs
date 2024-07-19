@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections;
+using System.Threading.Tasks;
+using _Neighbours.Scripts.Neighbour;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
@@ -11,28 +13,48 @@ namespace _Neighbours.Scripts.States
         public ActivityRoute ActivityRoute => _activityRoute;
 
         public int CurrentPointIndex { get; set; }
+        
+        private NeighbourVision _visionSystem;
+        [SerializeField] private Transform _playerTransform;
+        
+        private Coroutine _visionCheckCoroutine;
 
         protected override void Start()
         {
             base.Start();
+            _visionSystem = GetComponent<NeighbourVision>();
+            if (_visionSystem == null)
+            {
+                Debug.LogError("VisionSystem component not found on the Neighbour!");
+            }
             ChangeState(new PatrolState(this));
+            
+            _visionCheckCoroutine = StartCoroutine(VisionCheckRoutine());
+        }
+        
+        private IEnumerator VisionCheckRoutine()
+        {
+            WaitForSeconds wait = new WaitForSeconds(_visionSystem.VisionCheckInterval);
+        
+            while (true)
+            {
+                if (_visionSystem != null && _visionSystem.CanSeeTarget(_playerTransform))
+                {
+                    ChangeState(new ChasePlayerState(this, _playerTransform));
+                }
+            
+                yield return wait;
+            }
         }
 
-        // private void Update()
-        // {
-        //     if (PlayerDetected())
-        //     {
-        //         ChangeState(new ChasePlayerState(this, Player));
-        //     }
-        // }
-
-        // private bool PlayerDetected()
-        // {
-        //     if (Player == null)
-        //         return false;
-        //
-        //     return Vector3.Distance(transform.position, Player.position) <= detectionRadius;
-        // }
+        protected  void OnDisable()
+        {
+            // Останавливаем корутину при отключении объекта
+            if (_visionCheckCoroutine != null)
+            {
+                StopCoroutine(_visionCheckCoroutine);
+            }
+        }
     }
     
     public class IdleState : State
@@ -95,14 +117,34 @@ namespace _Neighbours.Scripts.States
             _player = player;
         }
 
-        public override void Enter() { }
+        public override void Enter()
+        {
+            _neighbour.Agent.isStopped = false;
+        }
 
         public override void Execute()
         {
-            _neighbour.Agent.SetDestination(_player.position);
+            if (_player != null)
+            {
+                _neighbour.Agent.SetDestination(_player.position);
+
+                if (Vector3.Distance(_neighbour.transform.position, _player.position) <= _neighbour.Agent.stoppingDistance)
+                {
+                    // Игрок пойман, завершаем игру
+                    Debug.Log("Игрок пойман! Игра окончена.");
+                    // Здесь можно вызвать метод для завершения игры
+                }
+            }
+            else
+            {
+                _neighbour.ChangeState(new IdleState(_neighbour));
+            }
         }
 
-        public override void Exit() { }
+        public override void Exit()
+        {
+            _neighbour.Agent.isStopped = true;
+        }
     }
 
     public class SleepState : State
@@ -175,7 +217,6 @@ namespace _Neighbours.Scripts.States
             if (!_isExecuting)
             {
                 _isExecuting = true;
-                //Debug.Log(_activityRoute.activities[_currentPointIndex]);
                 await PerformActivity(_activityRoute.activities[_currentPointIndex]);
                 _isExecuting = false;
                 _currentPointIndex = (_currentPointIndex + 1) % _activityRoute.activities.Count;
