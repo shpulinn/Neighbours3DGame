@@ -72,6 +72,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43d72fd2a304b3542af3534b388e4f32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  textPopUpPrefab: {fileID: 1242344312498205672, guid: 1fd08886cd675434eb96712367881b81,
+    type: 3}
   interactionTime: 5
   itemToGive: {fileID: 11400000, guid: 33a6e0245afc1234fbc31f9e1dc9d62a, type: 2}
 --- !u!208 &714566199708370633
