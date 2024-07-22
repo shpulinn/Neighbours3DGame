@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Threading.Tasks;
 using _Neighbours.Scripts.Neighbour;
+using _Neighbours.Scripts.UI;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
@@ -9,19 +10,25 @@ namespace _Neighbours.Scripts.States
     public class NeighbourStateMachine : StateMachine
     {
         [SerializeField] private ActivityRoute _activityRoute;
+
+        [SerializeField] private Transform _playerTransform;
+        [Space] [SerializeField] private GameObject progressBarPrefab;
+
+        private ProgressBar _progressBar;
+        
+        private NeighbourVision _visionSystem;
+        private Coroutine _visionCheckCoroutine;
         
         public ActivityRoute ActivityRoute => _activityRoute;
 
         public int CurrentPointIndex { get; set; }
-        
-        private NeighbourVision _visionSystem;
-        [SerializeField] private Transform _playerTransform;
-        
-        private Coroutine _visionCheckCoroutine;
 
         protected override void Start()
         {
             base.Start();
+
+            InitializeProgressBar();
+            
             _visionSystem = GetComponent<NeighbourVision>();
             if (_visionSystem == null)
             {
@@ -30,6 +37,18 @@ namespace _Neighbours.Scripts.States
             ChangeState(new PatrolState(this));
             
             _visionCheckCoroutine = StartCoroutine(VisionCheckRoutine());
+        }
+        
+        public void StartAction(string actionName, float duration)
+        {
+            _progressBar.StartAction(actionName, duration);
+        }
+        
+        private void InitializeProgressBar()
+        {
+            GameObject progressBarObject = Instantiate(progressBarPrefab, transform);
+            _progressBar = progressBarObject.GetComponent<ProgressBar>();
+            progressBarObject.transform.localPosition = Vector3.up * 3; // Расположите над головой соседа
         }
         
         private IEnumerator VisionCheckRoutine()
@@ -227,6 +246,8 @@ namespace _Neighbours.Scripts.States
         private async UniTask PerformActivity(Activity activity)
         {
             // add animation/other logic?
+            // show prgress
+            _neighbour.StartAction(activity.Name, activity.Duration);
             await UniTask.Delay((int)(activity.Duration * 1000));
         }
         
