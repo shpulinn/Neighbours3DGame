@@ -1,9 +1,13 @@
+using System;
 using System.Collections;
 using _Neighbours.Scripts;
+using _Neighbours.Scripts.UI;
 using UnityEngine;
 
 public class Box : MonoBehaviour, IInteractable
 {
+    [SerializeField] private GameObject textPopUpPrefab;
+    [SerializeField] private string popUpMessage;
     [SerializeField] private float interactionTime;
     [SerializeField] private Item itemToGive;
     private float _interactionProgress;
@@ -12,12 +16,35 @@ public class Box : MonoBehaviour, IInteractable
     public float InteractionProgress => _interactionProgress;
 
     private bool _wasOpened = false;
+
+    private TextPopUp _textPopUp;
+
+    private void Start()
+    {
+        InitializeThoughtBubble();
+    }
     
+    private void InitializeThoughtBubble()
+    {
+        GameObject thoughtBubbleObject = Instantiate(textPopUpPrefab, transform);
+        _textPopUp = thoughtBubbleObject.GetComponent<TextPopUp>();
+        thoughtBubbleObject.transform.localPosition = Vector3.up * 2.5f; // Расположите над головой соседа
+    }
+
+    public void ShowThought(string thought, float duration = -1)
+    {
+        if (string.IsNullOrEmpty(thought))
+        {
+            return;
+        }
+        _textPopUp.ShowThought(thought, duration);
+    }
+
     public void Interact()
     {
         if (_wasOpened)
         {
-            Debug.Log("Тут больше ничего нет");
+            ShowThought(popUpMessage, 2f);
             TerminateInteraction();
             return;
         }
