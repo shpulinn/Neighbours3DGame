@@ -17,6 +17,7 @@ namespace _Neighbours.Scripts.States
         private ProgressBar _progressBar;
         
         private NeighbourVision _visionSystem;
+        private SoundSystem _soundSystem;
         private Coroutine _visionCheckCoroutine;
         
         public ActivityRoute ActivityRoute => _activityRoute;
@@ -30,13 +31,14 @@ namespace _Neighbours.Scripts.States
             InitializeProgressBar();
             
             _visionSystem = GetComponent<NeighbourVision>();
-            if (_visionSystem == null)
+            _soundSystem = GetComponent<SoundSystem>();
+            if (_visionSystem == null || _soundSystem == null)
             {
-                Debug.LogError("VisionSystem component not found on the Neighbour!");
+                Debug.LogError("Required components not found on the Neighbour!");
             }
             ChangeState(new PatrolState(this));
             
-            _visionCheckCoroutine = StartCoroutine(VisionCheckRoutine());
+            _visionCheckCoroutine = StartCoroutine(VisionAndSoundCheckRoutine());
         }
         
         public void StartAction(string actionName, float duration)
@@ -48,18 +50,22 @@ namespace _Neighbours.Scripts.States
         {
             GameObject progressBarObject = Instantiate(progressBarPrefab, transform);
             _progressBar = progressBarObject.GetComponent<ProgressBar>();
-            progressBarObject.transform.localPosition = Vector3.up * 3; // Расположите над головой соседа
+            progressBarObject.transform.localPosition = Vector3.up * 3;
         }
         
-        private IEnumerator VisionCheckRoutine()
+        private IEnumerator VisionAndSoundCheckRoutine()
         {
-            WaitForSeconds wait = new WaitForSeconds(_visionSystem.VisionCheckInterval);
+            WaitForSeconds wait = new WaitForSeconds(.5f);
         
             while (true)
             {
                 if (_visionSystem != null && _visionSystem.CanSeeTarget(_playerTransform))
                 {
                     ChangeState(new ChasePlayerState(this, _playerTransform));
+                }
+                else if (_soundSystem != null && _soundSystem.CanHear(_playerTransform.position, "Footstep"))
+                {
+                    //ChangeState(new InvestigateState(this, _playerTransform.position));
                 }
             
                 yield return wait;

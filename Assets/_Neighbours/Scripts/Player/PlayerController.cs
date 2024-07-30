@@ -1,6 +1,7 @@
 using System.Collections;
 using _Neighbours.Scripts;
 using _Neighbours.Scripts.Interactables;
+using _Neighbours.Scripts.UI;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -12,15 +13,28 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float interactionDistance = 2f;
     [SerializeField] private float playerNormalMoveSpeed;
     [SerializeField] private float playerSlowMoveSpeed;
+    [Space] [SerializeField] private GameObject progressBarPrefab;
+
+    private ProgressBar _progressBar;
 
     private PlayerStateMachine _stateMachine;
     private Inventory _inventory;
+    
+    public ProgressBar ProgressBar => _progressBar;
     
     private void Start()
     {
         _stateMachine = GetComponent<PlayerStateMachine>();
         _inventory = GetComponent<Inventory>();
         _stateMachine.ChangeState(new IdleState(_stateMachine));
+        InitializeProgressBar();
+    }
+    
+    private void InitializeProgressBar()
+    {
+        GameObject progressBarObject = Instantiate(progressBarPrefab, transform);
+        _progressBar = progressBarObject.GetComponent<ProgressBar>();
+        progressBarObject.transform.localPosition = Vector3.up * 1.5f;
     }
 
     private void Update()
@@ -51,12 +65,12 @@ public class PlayerController : MonoBehaviour
                     }
                     else
                     {
-                        _stateMachine.ChangeState(new InteractState(_stateMachine, interactable));
+                        _stateMachine.ChangeState(new InteractState(_stateMachine, interactable, _progressBar));
                     }
                 }
                 else // approach to interactable object before interacting
                 {
-                    _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactable, _inventory, this));
+                    _stateMachine.ChangeState(new ApproachState(_stateMachine, hit.point, interactionDistance, interactable, _inventory, this));
                 }
             } else if (Physics.Raycast(ray, out hit, 100, groundLayer))
             {

@@ -1,5 +1,6 @@
 ﻿using _Neighbours.Scripts.Interactables;
 using _Neighbours.Scripts.States;
+using _Neighbours.Scripts.UI;
 using UnityEngine;
 
 namespace _Neighbours.Scripts
@@ -82,16 +83,18 @@ namespace _Neighbours.Scripts
         private PlayerStateMachine _player;
         private PlayerController _playerController;
         private Vector3 _targetPosition;
+        private float _minDistance;
         private IInteractable _interactable;
         private IInventoryInteractable _inventoryInteractable;
         private Inventory _inventory;
         private IHidable _hidable;
 
-        public ApproachState(PlayerStateMachine player, Vector3 targetPosition, IInteractable interactable, Inventory inventory = null, PlayerController playerController = null)
+        public ApproachState(PlayerStateMachine player, Vector3 targetPosition, float minDistance, IInteractable interactable, Inventory inventory = null, PlayerController playerController = null)
         {
             _player = player;
             _playerController = playerController;
             _targetPosition = targetPosition;
+            _minDistance = minDistance;
             _interactable = interactable;
             _inventoryInteractable = interactable as IInventoryInteractable;
             _inventory = inventory;
@@ -105,7 +108,7 @@ namespace _Neighbours.Scripts
 
         public override void Execute()
         {
-            if (Vector3.Distance(_player.transform.position, _targetPosition) < 1.0f)
+            if (Vector3.Distance(_player.transform.position, _targetPosition) < _minDistance)
             {
                 if (_inventoryInteractable != null)
                 {
@@ -117,7 +120,7 @@ namespace _Neighbours.Scripts
                 }
                 else
                 {
-                    _player.ChangeState(new InteractState(_player, _interactable));
+                    _player.ChangeState(new InteractState(_player, _interactable, _playerController.ProgressBar));
                 }
             }
         }
@@ -129,20 +132,23 @@ namespace _Neighbours.Scripts
     {
         private PlayerStateMachine _player;
         private IInteractable _interactable;
+        private ProgressBar _progressBar;
         
         private float _interactionTime;
         private float _elapsedTime;
 
-        public InteractState(PlayerStateMachine player, IInteractable interactable)
+        public InteractState(PlayerStateMachine player, IInteractable interactable, ProgressBar progressBar)
         {
             _player = player;
             _interactable = interactable;
             _interactionTime = interactable.InteractionDuration;
+            _progressBar = progressBar;
         }
 
         public override void Enter()
         {
             _interactable.Interact();
+            _progressBar.StartAction("InteractWith", _interactionTime);
             _elapsedTime = 0f;
         }
 
@@ -160,6 +166,7 @@ namespace _Neighbours.Scripts
             if (_elapsedTime < _interactionTime)
             {
                 _interactable.TerminateInteraction();
+                _progressBar.StopAction();
             }
         }
     }

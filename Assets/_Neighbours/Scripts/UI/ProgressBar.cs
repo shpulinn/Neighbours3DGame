@@ -60,6 +60,11 @@ namespace _Neighbours.Scripts.UI
             ShowProgressBar();
         }
 
+        public void StopAction()
+        {
+            CompleteAction();
+        }
+
         private void UpdateProgressBar()
         {
             if (fillImage != null)

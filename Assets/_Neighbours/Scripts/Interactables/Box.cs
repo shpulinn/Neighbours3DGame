@@ -28,7 +28,7 @@ public class Box : MonoBehaviour, IInteractable
     {
         GameObject thoughtBubbleObject = Instantiate(textPopUpPrefab, transform);
         _textPopUp = thoughtBubbleObject.GetComponent<TextPopUp>();
-        thoughtBubbleObject.transform.localPosition = Vector3.up * 2.5f; // Расположите над головой соседа
+        thoughtBubbleObject.transform.localPosition = Vector3.up * 2.5f;
     }
 
     public void ShowThought(string thought, float duration = -1)
@@ -64,7 +64,6 @@ public class Box : MonoBehaviour, IInteractable
         {
             // doing smthng
             _interactionProgress += Time.deltaTime;
-            Debug.Log("Seeking in a box");
             yield return null;
         }
         
